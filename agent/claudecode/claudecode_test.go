@@ -330,10 +330,10 @@ func TestStartSession_DisableVerboseAndSessionID(t *testing.T) {
 			wantDisableVerb: false,
 		},
 		{
-			name:            "router disables verbose",
+			name:            "router disables verbose and forces fresh session",
 			routerURL:       "http://127.0.0.1:3456",
 			sessionID:       "existing",
-			wantSessionID:   "existing",
+			wantSessionID:   "",
 			wantDisableVerb: true,
 			wantExtraEnv: []string{
 				"ANTHROPIC_BASE_URL=http://127.0.0.1:3456",
@@ -360,7 +360,7 @@ func TestStartSession_DisableVerboseAndSessionID(t *testing.T) {
 			routerURL:       "http://127.0.0.1:3456",
 			routerAPIKey:    "test-key",
 			sessionID:       "existing",
-			wantSessionID:   "existing",
+			wantSessionID:   "",
 			wantDisableVerb: true,
 			wantExtraEnv: []string{
 				"ANTHROPIC_BASE_URL=http://127.0.0.1:3456",

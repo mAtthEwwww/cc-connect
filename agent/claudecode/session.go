@@ -45,13 +45,20 @@ type claudeSession struct {
 
 func newClaudeSession(ctx context.Context, workDir, model, sessionID, mode string, allowedTools, disallowedTools []string, extraEnv []string, platformPrompt string, disableVerbose bool) (*claudeSession, error) {
 	sessionCtx, cancel := context.WithCancel(ctx)
+	claudeBin := resolveClaudeBinary()
+	effectiveDisableVerbose := disableVerbose
+	if filepath.Base(claudeBin) == "claude-orig" {
+		// Local diagnostic workaround: this runtime requires --verbose together
+		// with stream-json, even when router mode would normally suppress it.
+		effectiveDisableVerbose = false
+	}
 
 	args := []string{
 		"--output-format", "stream-json",
 		"--input-format", "stream-json",
 		"--permission-prompt-tool", "stdio",
 	}
-	if !disableVerbose {
+	if !effectiveDisableVerbose {
 		args = append(args, "--verbose")
 	}
 
@@ -88,7 +95,7 @@ func newClaudeSession(ctx context.Context, workDir, model, sessionID, mode strin
 		args = append(args, "--append-system-prompt", sysPrompt)
 	}
 
-	cmd := exec.CommandContext(sessionCtx, "claude", args...)
+	cmd := exec.CommandContext(sessionCtx, claudeBin, args...)
 	cmd.Dir = workDir
 	// Filter out Claude Code/session bridge env from the parent process so the
 	// child CLI does not attach to an existing remote/service-backed session.
@@ -631,6 +638,13 @@ func filterEnvPrefix(env []string, prefix string) []string {
 		}
 	}
 	return out
+}
+
+func resolveClaudeBinary() string {
+	if path, err := exec.LookPath("claude-orig"); err == nil && strings.TrimSpace(path) != "" {
+		return path
+	}
+	return "claude"
 }
 
 var ansiControlSeq = regexp.MustCompile(`\x1b(?:\[[0-9;?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\))`)

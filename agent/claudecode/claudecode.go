@@ -311,11 +311,10 @@ func (a *Agent) StartSession(ctx context.Context, sessionID string) (core.AgentS
 	mode := a.mode
 	a.mu.Unlock()
 
-	// Router-backed Claude runs have shown unstable behavior when reusing the
-	// "continue latest session" bridge. Force a fresh process-level session for
-	// router mode so we can isolate CCR/auth behavior from stale local session
-	// state. Explicit resume IDs are preserved.
-	if routerURL != "" && sessionID == core.ContinueSession {
+	// Router-backed Claude runs have shown unstable behavior when resuming any
+	// prior local session state. Force a fresh process-level session for router
+	// mode so CCR-backed runs do not inherit stale CLI session IDs.
+	if routerURL != "" && sessionID != "" {
 		sessionID = ""
 	}
 
